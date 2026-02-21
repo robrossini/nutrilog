@@ -1,23 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../../lib/supabase";
-import { getUserFromRequest } from "../../../../lib/api-auth";
+import { NextResponse } from "next/server";
+import { createSupabaseUserClient, getBearerToken } from "../../../../lib/supabase";
+
+export const runtime = "nodejs";
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { user, error: authError } = await getUserFromRequest(req);
-    if (!user) {
-      return NextResponse.json({ error: authError || "Unauthorized" }, { status: 401 });
+    const token = getBearerToken(req);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
+    const supabase = createSupabaseUserClient(token);
 
-    const { error } = await supabaseAdmin
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    const user = userData?.user;
+
+    if (userErr || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const mealId = params.id;
+
+    const { error } = await supabase
       .from("meals")
       .delete()
-      .eq("id", id)
+      .eq("id", mealId)
       .eq("user_id", user.id);
 
     if (error) {
@@ -25,9 +35,9 @@ export async function DELETE(
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (e: any) {
     return NextResponse.json(
-      { error: err?.message ?? "Unexpected error" },
+      { error: e?.message ?? "Server error" },
       { status: 500 }
     );
   }
