@@ -241,13 +241,13 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <Link
               href="/settings"
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 bg-blue-600 text-white px-3 py-2 text-sm hover:bg-gray-50"
             >
               Settings
             </Link>
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 bg-blue-600 text-white px-3 py-2 text-sm hover:bg-gray-50"
             >
               Log out
             </button>
