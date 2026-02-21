@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabase-client";
 
 type GoalType = "lose_weight" | "build_muscle" | "maintain";
@@ -44,8 +44,9 @@ type RecommendationResponse = {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isOnboarding = searchParams.get("onboarding") === "1";
+
+  // ✅ Avoid useSearchParams() to prevent Next build/prerender errors
+  const [isOnboarding, setIsOnboarding] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,6 +74,12 @@ export default function SettingsPage() {
     () => goalType === "lose_weight" || goalType === "build_muscle",
     [goalType]
   );
+
+  useEffect(() => {
+    // client-only query param parsing (safe for build)
+    const params = new URLSearchParams(window.location.search);
+    setIsOnboarding(params.get("onboarding") === "1");
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -104,9 +111,7 @@ export default function SettingsPage() {
         }
 
         const p = data.profile;
-        if (!p) return;
-
-        if (!mounted) return;
+        if (!p || !mounted) return;
 
         setDisplayName(p.display_name || "");
         setAge(p.age ? String(p.age) : "");
@@ -225,7 +230,8 @@ export default function SettingsPage() {
         sex,
         activity_level: activityLevel,
         goal_type: goalType,
-        target_weight_change_kg: needsTargetChange && targetWeightChangeKg ? Number(targetWeightChangeKg) : null,
+        target_weight_change_kg:
+          needsTargetChange && targetWeightChangeKg ? Number(targetWeightChangeKg) : null,
         daily_calorie_target: calories ? Number(calories) : null,
         protein_target_g: protein ? Number(protein) : null,
         carbs_target_g: carbs ? Number(carbs) : null,
@@ -296,62 +302,31 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Age</label>
-              <input
-                type="number"
-                min={10}
-                max={120}
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2"
-              />
+              <input type="number" min={10} max={120} value={age} onChange={(e) => setAge(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Height (cm)</label>
-              <input
-                type="number"
-                min={100}
-                max={250}
-                value={heightCm}
-                onChange={(e) => setHeightCm(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2"
-              />
+              <input type="number" min={100} max={250} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Weight (kg)</label>
-              <input
-                type="number"
-                min={30}
-                max={300}
-                step="0.1"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2"
-              />
+              <input type="number" min={30} max={300} step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Sex</label>
-              <select
-                value={sex}
-                onChange={(e) => setSex(e.target.value as SexType)}
-                className="w-full rounded-lg border px-3 py-2"
-              >
+              <select value={sex} onChange={(e) => setSex(e.target.value as SexType)} className="w-full rounded-lg border px-3 py-2">
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="other">Other</option>
                 <option value="prefer_not_to_say">Prefer not to say</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1">Activity level</label>
-              <select
-                value={activityLevel}
-                onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
-                className="w-full rounded-lg border px-3 py-2"
-              >
+              <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)} className="w-full rounded-lg border px-3 py-2">
                 <option value="sedentary">Sedentary</option>
                 <option value="lightly_active">Lightly active</option>
                 <option value="moderately_active">Moderately active</option>
@@ -363,11 +338,7 @@ export default function SettingsPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">Goal</label>
-            <select
-              value={goalType}
-              onChange={(e) => setGoalType(e.target.value as GoalType)}
-              className="w-full rounded-lg border px-3 py-2"
-            >
+            <select value={goalType} onChange={(e) => setGoalType(e.target.value as GoalType)} className="w-full rounded-lg border px-3 py-2">
               <option value="maintain">Maintain</option>
               <option value="lose_weight">Lose weight</option>
               <option value="build_muscle">Build muscle</option>
@@ -379,14 +350,7 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium mb-1">
                 {goalType === "lose_weight" ? "Target weight loss (kg)" : "Target weight gain (kg)"}
               </label>
-              <input
-                type="number"
-                min={0.5}
-                step="0.5"
-                value={targetWeightChangeKg}
-                onChange={(e) => setTargetWeightChangeKg(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2"
-              />
+              <input type="number" min={0.5} step="0.5" value={targetWeightChangeKg} onChange={(e) => setTargetWeightChangeKg(e.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </div>
           )}
 
@@ -406,39 +370,19 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Calories</label>
-                <input
-                  type="number"
-                  value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 bg-white"
-                />
+                <input type="number" value={calories} onChange={(e) => setCalories(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Protein (g)</label>
-                <input
-                  type="number"
-                  value={protein}
-                  onChange={(e) => setProtein(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 bg-white"
-                />
+                <input type="number" value={protein} onChange={(e) => setProtein(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Carbs (g)</label>
-                <input
-                  type="number"
-                  value={carbs}
-                  onChange={(e) => setCarbs(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 bg-white"
-                />
+                <input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Fat (g)</label>
-                <input
-                  type="number"
-                  value={fat}
-                  onChange={(e) => setFat(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 bg-white"
-                />
+                <input type="number" value={fat} onChange={(e) => setFat(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white" />
               </div>
             </div>
 
