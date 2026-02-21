@@ -24,7 +24,10 @@ export function VoiceRecorder({ onComplete, onCancel }: VoiceRecorderProps) {
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const finalRef = useRef<string>(''); // source of truth for final text
+
+  // Dedupe helpers (mainly for Chrome Android weirdness)
+  const lastFinalRef = useRef<string>(''); // last final chunk appended
+  const allFinalRef = useRef<string>('');  // full final transcript
 
   useEffect(() => {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -33,11 +36,18 @@ export function VoiceRecorder({ onComplete, onCancel }: VoiceRecorderProps) {
       return;
     }
 
+    // reset each time component mounts
+    lastFinalRef.current = '';
+    allFinalRef.current = '';
+    setFinalText('');
+    setInterim('');
+
     const recognition = new Recognition();
     recognitionRef.current = recognition;
 
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    // If you set these to false, interimText will basically never be used (fine)
+    recognition.continuous = false;
+    recognition.interimResults = false;
     recognition.lang = 'en-GB';
     recognition.maxAlternatives = 1;
 
@@ -48,33 +58,35 @@ export function VoiceRecorder({ onComplete, onCancel }: VoiceRecorderProps) {
     };
 
     recognition.onresult = (event: any) => {
-      // Only process the NEW results since last callback
-      let nextInterim = '';
+      let interimText = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Process only new results
+      const startIndex = typeof event.resultIndex === 'number' ? event.resultIndex : 0;
+
+      for (let i = startIndex; i < event.results.length; i++) {
         const res = event.results[i];
         const text = (res?.[0]?.transcript ?? '').trim();
         if (!text) continue;
 
         if (res.isFinal) {
-          // Append only once when finalised
-          finalRef.current = `${finalRef.current} ${text}`.trim();
+          // Deduplicate: ignore if identical to last appended chunk
+          if (text !== lastFinalRef.current) {
+            allFinalRef.current = `${allFinalRef.current} ${text}`.trim();
+            lastFinalRef.current = text;
+          }
         } else {
-          // Interim should be just the latest "live" phrase(s)
-          nextInterim += `${text} `;
+          interimText += `${text} `;
         }
       }
 
-      setFinalText(finalRef.current);
-      setInterim(nextInterim.trim());
+      setFinalText(allFinalRef.current);
+      setInterim(interimText.trim());
     };
 
     recognition.onerror = (e: any) => {
-      // Common on mobile: "no-speech", "aborted", "network"
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
-      // Keep whatever we have; user can still "Use Transcript"
       console.warn('Speech recognition error:', e?.error ?? e);
     };
 
@@ -109,12 +121,11 @@ export function VoiceRecorder({ onComplete, onCancel }: VoiceRecorderProps) {
     `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
   const stopRecording = () => {
-    // Stop first so we don’t get a late onresult that changes state mid-submit
     try {
       recognitionRef.current?.stop();
     } catch {}
 
-    const text = `${finalRef.current} ${interim}`.trim();
+    const text = `${allFinalRef.current} ${interim}`.trim();
     if (text) onComplete(text);
     else onCancel();
   };
