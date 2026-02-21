@@ -19,7 +19,25 @@ type Profile = {
   protein_target_g: number;
   carbs_target_g: number;
   fat_target_g: number;
+  age?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  sex?: string | null;
+  activity_level?: string | null;
+  goal_type?: string | null;
+  target_weight_change_kg?: number | null;
+  onboarding_completed_at?: string | null;
 };
+
+function profileNeedsOnboarding(profile: Profile | null | undefined) {
+  if (!profile) return true;
+  const hasCore = !!(profile.age && profile.height_cm && profile.weight_kg && profile.sex && profile.activity_level && profile.goal_type);
+  const needsTargetChange = profile.goal_type === "lose_weight" || profile.goal_type === "build_muscle";
+  const hasTargetChange = !needsTargetChange || !!profile.target_weight_change_kg;
+  const hasMacros = !!(profile.daily_calorie_target && profile.protein_target_g && profile.carbs_target_g && profile.fat_target_g);
+  return !(profile.onboarding_completed_at && hasCore && hasTargetChange && hasMacros);
+}
+
 
 export default function HomePage() {
   const router = useRouter();
@@ -51,7 +69,13 @@ export default function HomePage() {
       });
 
       const profileJson = await profileRes.json();
-      if (profileRes.ok) setProfile(profileJson.profile);
+      if (profileRes.ok) {
+        setProfile(profileJson.profile);
+        if (profileNeedsOnboarding(profileJson.profile)) {
+          router.replace("/settings?onboarding=1");
+          return;
+        }
+      }
 
       await loadMeals(
         activeTab === "today" ? "today" : "month",

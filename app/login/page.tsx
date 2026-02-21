@@ -5,6 +5,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabase-client";
 
+type Profile = {
+  onboarding_completed_at?: string | null;
+  age?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  sex?: string | null;
+  activity_level?: string | null;
+  goal_type?: string | null;
+  target_weight_change_kg?: number | null;
+  daily_calorie_target?: number | null;
+  protein_target_g?: number | null;
+  carbs_target_g?: number | null;
+  fat_target_g?: number | null;
+};
+
+function profileNeedsOnboarding(profile: Profile | null | undefined) {
+  if (!profile) return true;
+  const hasCore = !!(profile.age && profile.height_cm && profile.weight_kg && profile.sex && profile.activity_level && profile.goal_type);
+  const needsTargetChange = profile.goal_type === "lose_weight" || profile.goal_type === "build_muscle";
+  const hasTargetChange = !needsTargetChange || !!profile.target_weight_change_kg;
+  const hasMacros = !!(profile.daily_calorie_target && profile.protein_target_g && profile.carbs_target_g && profile.fat_target_g);
+  return !(profile.onboarding_completed_at && hasCore && hasTargetChange && hasMacros);
+}
+
+async function routeAfterAuth(accessToken: string, router: ReturnType<typeof useRouter>) {
+  const res = await fetch('/api/profile', { headers: { Authorization: `Bearer ${accessToken}` } });
+  const json = await res.json().catch(() => ({}));
+  const needs = !res.ok || profileNeedsOnboarding(json.profile);
+  router.replace(needs ? '/settings?onboarding=1' : '/');
+  router.refresh();
+}
+
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -14,7 +47,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabaseBrowser.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/");
+      if (data.session) void routeAfterAuth(data.session.access_token, router);
     });
   }, [router]);
 
@@ -23,7 +56,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabaseBrowser.auth.signInWithPassword({
+    const { data, error } = await supabaseBrowser.auth.signInWithPassword({
       email,
       password,
     });
@@ -35,8 +68,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    await routeAfterAuth(data.session.access_token, router);
   }
 
   return (

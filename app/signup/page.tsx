@@ -29,6 +29,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { display_name: displayName },
+        emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
       },
     });
 
@@ -56,14 +57,17 @@ export default function SignupPage() {
         }),
       });
 
-      router.push("/");
+      await fetch("/api/profile", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      router.push("/settings?onboarding=1");
       router.refresh();
       return;
     }
 
     // If email confirmation is enabled
     setLoading(false);
-    setError("Check your email to confirm your account, then log in.");
+    setError("Check your email to confirm your account. After confirming, you'll be taken back to NutriLog to finish setup.");
   }
 
   return (
