@@ -1,5 +1,5 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Flame, Target } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Flame, Target } from "lucide-react";
 
 interface MacrosSummaryProps {
   totalCalories: number;
@@ -7,6 +7,9 @@ interface MacrosSummaryProps {
   totalCarbs: number;
   totalFat: number;
   calorieGoal?: number;
+  proteinGoal?: number;
+  carbsGoal?: number;
+  fatGoal?: number;
 }
 
 export function MacrosSummary({
@@ -15,11 +18,14 @@ export function MacrosSummary({
   totalCarbs,
   totalFat,
   calorieGoal = 2000,
+  proteinGoal = 150,
+  carbsGoal = 180,
+  fatGoal = 70,
 }: MacrosSummaryProps) {
   const macroData = [
-    { name: 'Protein', value: totalProtein * 4, grams: totalProtein, color: '#ef4444' },
-    { name: 'Carbs', value: totalCarbs * 4, grams: totalCarbs, color: '#eab308' },
-    { name: 'Fat', value: totalFat * 9, grams: totalFat, color: '#3b82f6' },
+    { name: "Protein", value: totalProtein * 4, grams: totalProtein, color: "#ef4444" },
+    { name: "Carbs", value: totalCarbs * 4, grams: totalCarbs, color: "#eab308" },
+    { name: "Fat", value: totalFat * 9, grams: totalFat, color: "#3b82f6" },
   ];
 
   const calorieProgress = Math.min((totalCalories / calorieGoal) * 100, 100);
@@ -42,7 +48,9 @@ export function MacrosSummary({
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600">Remaining</p>
-            <p className="text-2xl font-semibold text-gray-900">{Math.max(calorieGoal - totalCalories, 0)}</p>
+            <p className="text-2xl font-semibold text-gray-900">
+              {Math.max(calorieGoal - totalCalories, 0)}
+            </p>
           </div>
         </div>
 
@@ -70,7 +78,9 @@ export function MacrosSummary({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(((percent as number) || 0) * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(((percent as number) || 0) * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     dataKey="value"
                   >
@@ -81,7 +91,7 @@ export function MacrosSummary({
                   <Tooltip
                     formatter={(value: number, _name: string, props: any) => [
                       `${props?.payload?.grams ?? 0}g (${Math.round(value)} cal)`,
-                      props?.payload?.name ?? '',
+                      props?.payload?.name ?? "",
                     ]}
                   />
                 </PieChart>
@@ -89,9 +99,24 @@ export function MacrosSummary({
             </div>
 
             <div className="space-y-4 flex flex-col justify-center">
-              <MacroLegendRow label="Protein" value={`${totalProtein}g`} swatch="bg-red-500" bg="bg-red-50" />
-              <MacroLegendRow label="Carbs" value={`${totalCarbs}g`} swatch="bg-yellow-500" bg="bg-yellow-50" />
-              <MacroLegendRow label="Fat" value={`${totalFat}g`} swatch="bg-blue-500" bg="bg-blue-50" />
+              <MacroLegendRow
+                label="Protein"
+                value={`${totalProtein}g / ${proteinGoal}g`}
+                swatch="bg-red-500"
+                bg="bg-red-50"
+              />
+              <MacroLegendRow
+                label="Carbs"
+                value={`${totalCarbs}g / ${carbsGoal}g`}
+                swatch="bg-yellow-500"
+                bg="bg-yellow-50"
+              />
+              <MacroLegendRow
+                label="Fat"
+                value={`${totalFat}g / ${fatGoal}g`}
+                swatch="bg-blue-500"
+                bg="bg-blue-50"
+              />
             </div>
           </div>
         ) : (
@@ -104,7 +129,17 @@ export function MacrosSummary({
   );
 }
 
-function MacroLegendRow({ label, value, swatch, bg }: { label: string; value: string; swatch: string; bg: string }) {
+function MacroLegendRow({
+  label,
+  value,
+  swatch,
+  bg,
+}: {
+  label: string;
+  value: string;
+  swatch: string;
+  bg: string;
+}) {
   return (
     <div className={`flex items-center justify-between p-3 ${bg} rounded-lg`}>
       <div className="flex items-center gap-3">

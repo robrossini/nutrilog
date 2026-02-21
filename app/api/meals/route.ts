@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../lib/supabase";
+import { getUserFromRequest } from "../../../lib/api-auth";
 
 function getRange(range: string) {
   const now = new Date();
@@ -7,7 +8,6 @@ function getRange(range: string) {
   const end = new Date(now);
 
   if (range === "week") {
-    // Monday start (UK-friendly)
     const day = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
     start.setDate(now.getDate() - day);
     start.setHours(0, 0, 0, 0);
@@ -21,7 +21,6 @@ function getRange(range: string) {
     end.setMonth(start.getMonth() + 1, 1);
     end.setHours(0, 0, 0, 0);
   } else {
-    // today
     start.setHours(0, 0, 0, 0);
     end.setTime(start.getTime());
     end.setDate(start.getDate() + 1);
@@ -32,20 +31,26 @@ function getRange(range: string) {
 
 export async function GET(req: NextRequest) {
   try {
+    const { user, error: authError } = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: authError || "Unauthorized" }, { status: 401 });
+    }
+
     const range = req.nextUrl.searchParams.get("range") || "today";
     const { start, end } = getRange(range);
 
     const { data: meals, error } = await supabaseAdmin
       .from("meals")
       .select("*, meal_items(*)")
+      .eq("user_id", user.id)
       .gte("logged_at", start)
       .lt("logged_at", end)
       .order("logged_at", { ascending: false });
 
-      if (error) {
-        console.error("Supabase /api/meals error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+    if (error) {
+      console.error("Supabase /api/meals error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     const totals = (meals ?? []).reduce(
       (acc, meal: any) => {

@@ -5,9 +5,15 @@ import { ParsedMealSchema } from "../../../lib/schemas";
 import { sumMealTotals } from "../../../lib/nutrition";
 import { supabaseAdmin } from "../../../lib/supabase";
 import { ParsedMealItem } from "../../../lib/types";
+import { getUserFromRequest } from "../../../lib/api-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const { user, error: authError } = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: authError || "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const input = String(body?.input || "").trim();
 
@@ -42,6 +48,7 @@ export async function POST(req: NextRequest) {
     const { data: mealRow, error: mealError } = await supabaseAdmin
       .from("meals")
       .insert({
+        user_id: user.id,
         raw_input: input,
         source: "text",
         meal_name: parsed.meal_name ?? "Meal",
