@@ -196,8 +196,8 @@ Return JSON in exactly this shape:
         carbs_g: totals.carbs_g,
         fat_g: totals.fat_g,
         logged_at: new Date().toISOString(),
-        // If you don't have this column, remove it:
-        parsed_json: parsed,
+        // Store structured data only if your schema supports it (e.g. assumptions_json / meal_items tables).
+        // parsed_json removed because the current `meals` table schema does not include that column.
       })
       .select("id")
       .single();

@@ -34,7 +34,7 @@ export function MealLogInput({ onSubmitMeal, isProcessing }: MealLogInputProps) 
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit(input)}
             placeholder="e.g., grilled chicken breast with rice and broccoli"
-            className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:white focus:border-transparent text-white"
             disabled={isProcessing}
           />
           <button

@@ -39,9 +39,7 @@ export default function SignupPage() {
         email: email.trim(),
         password,
         options: {
-          // This is the key fix:
-          // Local signup -> localhost callback
-          // Vercel signup -> deployed domain callback
+          // Uses the current domain (localhost in dev, Vercel URL in prod)
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
@@ -66,16 +64,16 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border p-6 shadow-sm bg-white">
-        <h1 className="text-2xl font-semibold mb-2">Create account</h1>
-        <p className="text-sm text-gray-600 mb-6">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-white text-black">
+      <div className="w-full max-w-md rounded-2xl border border-gray-300 p-6 shadow-sm bg-white">
+        <h1 className="text-2xl font-semibold mb-2 text-black">Create account</h1>
+        <p className="text-sm text-black mb-6">
           Sign up to start tracking meals and set your calorie and macro targets.
         </p>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-1 text-black">
               Email
             </label>
             <input
@@ -85,14 +83,14 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              className="w-full rounded-lg border border-gray-400 px-3 py-2 text-black bg-white outline-none focus:ring-2 focus:ring-black/10"
               disabled={loading}
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-medium mb-1 text-black">
               Password
             </label>
             <input
@@ -102,7 +100,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              className="w-full rounded-lg border border-gray-400 px-3 py-2 text-black bg-white outline-none focus:ring-2 focus:ring-black/10"
               disabled={loading}
               required
               minLength={6}
@@ -112,7 +110,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium mb-1"
+              className="block text-sm font-medium mb-1 text-black"
             >
               Confirm password
             </label>
@@ -123,20 +121,20 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              className="w-full rounded-lg border border-gray-400 px-3 py-2 text-black bg-white outline-none focus:ring-2 focus:ring-black/10"
               disabled={loading}
               required
             />
           </div>
 
           {errorMsg && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
               {errorMsg}
             </div>
           )}
 
           {successMsg && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+            <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">
               {successMsg}
             </div>
           )}
@@ -144,15 +142,15 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg border px-4 py-2 font-medium hover:bg-gray-50 disabled:opacity-60"
+            className="w-full rounded-lg border border-gray-400 bg-black px-4 py-2 font-medium text-white hover:bg-gray-800 disabled:opacity-60"
           >
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-4 text-sm text-black">
           Already have an account?{" "}
-          <Link href="/login" className="underline">
+          <Link href="/login" className="underline text-black">
             Log in
           </Link>
         </p>
