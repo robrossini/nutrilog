@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { supabaseBrowser } from "../../lib/supabase-client";
+import { ProgrammePanel } from "../../components/exercise/programme-panel";
+import { suggestWeight } from "../../lib/progression";
+import type { WeightSuggestion } from "../../lib/progression";
+import { localISODate } from "../../lib/training-plan";
+import type { PlanDay, TrainingPlan } from "../../lib/training-plan";
 
 type SetRow = {
   exercise_name: string;
@@ -25,6 +30,9 @@ type Session = {
   effort: number | null;
   notes: string | null;
   exercise_sets: SetRow[];
+  training_plan_id?: string | null;
+  planned_day_id?: string | null;
+  planned_week?: number | null;
 };
 
 const templates: Record<string, string[]> = {
@@ -59,6 +67,8 @@ export default function ExercisePage() {
   const [type, setType] = useState<"strength" | "run">("strength");
   const [title, setTitle] = useState("Gym A");
   const [sets, setSets] = useState<SetRow[]>([]);
+  const [planned, setPlanned] = useState<{ training_plan_id: string; planned_day_id: string; planned_week: number } | null>(null);
+  const [suggestions, setSuggestions] = useState<Record<number, WeightSuggestion>>({});
   const [distance, setDistance] = useState("");
   const [minutes, setMinutes] = useState("");
   const [effort, setEffort] = useState("");
@@ -95,6 +105,8 @@ export default function ExercisePage() {
   }, [token]);
 
   function useTemplate(name: string) {
+    setPlanned(null);
+    setSuggestions({});
     setType("strength");
     setTitle(name);
     setSuccess("");
@@ -113,6 +125,39 @@ export default function ExercisePage() {
       }));
     });
     setSets(next);
+  }
+
+  function startPlannedWorkout(day: PlanDay, plan: TrainingPlan, week: number) {
+    setType(day.activity_type);
+    setTitle(day.title);
+    setPerformedAt(localISODate());
+    setPlanned({ training_plan_id: plan.id, planned_day_id: day.id, planned_week: week });
+    setNotes(day.notes || "");
+    setError("");
+    setSuccess("");
+    if (day.activity_type === "strength") {
+      const nextSuggestions: Record<number, WeightSuggestion> = {};
+      const rows = day.exercises.flatMap((exercise, order) => {
+        const suggestion = suggestWeight(exercise, history);
+        nextSuggestions[order] = suggestion;
+        return Array.from({ length: exercise.target_sets }, (_, index) => ({
+          exercise_name: exercise.name,
+          exercise_order: order,
+          set_number: index + 1,
+          weight_kg: suggestion.weight_kg,
+          reps: 0, // Never pre-fill achieved reps for a workout not yet completed.
+          rir: null,
+        }));
+      });
+      setSuggestions(nextSuggestions);
+      setSets(rows);
+    } else {
+      setSuggestions({});
+      setSets([]);
+      setDistance("");
+      setMinutes(day.target_duration_min ? String(day.target_duration_min) : "");
+      setEffort("");
+    }
   }
 
   function changeSet(index: number, field: "weight_kg" | "reps" | "rir", value: string) {
@@ -142,14 +187,19 @@ export default function ExercisePage() {
 
   async function save() {
     if (!token || busy) return;
+    if (type === "strength" && sets.some(s => s.reps <= 0)) {
+      setError("Enter the repetitions you completed for every set, or remove sets you skipped.");
+      return;
+    }
     setBusy(true);
     setError("");
     setSuccess("");
     const payload = {
       activity_type: type,
-      title: type === "run" ? "Run" : title,
+      title: type === "run" && !planned ? "Run" : title,
       performed_at: new Date(performedAt + "T12:00:00").toISOString(),
       notes,
+      ...(planned ?? {}),
       ...(type === "run"
         ? {
             distance_m: Number(distance) * 1000,
@@ -169,6 +219,12 @@ export default function ExercisePage() {
       if (!res.ok) throw new Error(typeof result.error === "string" ? result.error : "Check the workout details and try again");
       setSuccess("Workout saved. You can see its full details below.");
       setNotes("");
+      setPlanned(null);
+      setSuggestions({});
+      setSets([]);
+      setDistance("");
+      setMinutes("");
+      setEffort("");
       setExpandedSessionId(result.id);
       await loadHistory(token);
     } catch (e) {
@@ -189,12 +245,14 @@ export default function ExercisePage() {
           <Link href="/settings" className="text-sm font-medium text-slate-700 hover:underline">Settings</Link>
         </header>
 
+        <ProgrammePanel token={token} history={history} onStart={startPlannedWorkout} />
+
         <div className="flex gap-2">
           {(["strength", "run"] as const).map(t => (
             <button
               key={t}
               type="button"
-              onClick={() => { setType(t); setSuccess(""); }}
+              onClick={() => { setType(t); setPlanned(null); setSuggestions({}); setSuccess(""); }}
               className={"rounded-lg px-4 py-2 font-medium " + (type === t
                 ? "bg-blue-700 text-white"
                 : "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50")}
@@ -204,7 +262,7 @@ export default function ExercisePage() {
           ))}
         </div>
 
-        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section id="workout-logger" className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <label className="block text-sm font-medium text-slate-700">
             Date
             <input type="date" value={performedAt} onChange={e => setPerformedAt(e.target.value)} className={"mt-1 block max-w-xs " + inputClass} />
@@ -212,6 +270,10 @@ export default function ExercisePage() {
 
           {type === "strength" ? (
             <>
+              {planned && <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-950">
+                <strong>Planned workout:</strong> Previous weights or starting estimates are prefilled. Enter the reps you actually complete (starting at 0). Suggested increases are optional.
+                <button type="button" className="ml-2 font-semibold underline" onClick={() => { setPlanned(null); setSuggestions({}); }}>Make unscheduled</button>
+              </div>}
               <div className="flex flex-wrap gap-2">
                 {Object.keys(templates).map(name => (
                   <button key={name} type="button" onClick={() => useTemplate(name)} className="rounded-lg bg-blue-50 px-3 py-2 font-medium text-blue-800 hover:bg-blue-100">{name}</button>
@@ -232,7 +294,7 @@ export default function ExercisePage() {
                         <input
                           aria-label="Exercise name"
                           value={exerciseName}
-                          onChange={e => { setSets(old => old.map(s => s.exercise_order === order ? { ...s, exercise_name: e.target.value } : s)); setSuccess(""); }}
+                          onChange={e => { setSets(old => old.map(s => s.exercise_order === order ? { ...s, exercise_name: e.target.value } : s)); setSuggestions(old => { const next = { ...old }; delete next[order]; return next; }); setSuccess(""); }}
                           className={"mt-1 font-semibold " + inputClass}
                         />
                       </label>
@@ -240,6 +302,18 @@ export default function ExercisePage() {
                         <Trash2 size={16} aria-hidden="true" /> Remove
                       </button>
                     </div>
+                    {suggestions[order] && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-950">
+                        <span>{suggestions[order].message}</span>
+                        {suggestions[order].next_weight_kg != null && (
+                          <button type="button" className="rounded-lg border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-800 hover:bg-blue-100" onClick={() => {
+                            setSets(old => old.map(s => s.exercise_order === order ? { ...s, weight_kg: suggestions[order].next_weight_kg } : s));
+                          }}>
+                            Use {suggestions[order].next_weight_kg} kg
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="grid grid-cols-[40px_1fr_1fr_1fr_38px] items-center gap-2 text-xs font-semibold text-slate-600">
                       <span>Set</span><span>kg</span><span>Reps</span><span>RIR</span><span></span>
                     </div>
