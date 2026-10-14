@@ -42,7 +42,7 @@ function groupSets(sets: SetRow[] = []) {
     if (group) group.sets.push(set);
     else groups.set(set.exercise_order, { name: set.exercise_name, sets: [set] });
   }
-  return [...groups.values()];
+  return Array.from(groups.values());
 }
 
 function paceLabel(distanceM: number, seconds: number) {
