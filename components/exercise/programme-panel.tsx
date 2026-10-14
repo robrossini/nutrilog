@@ -41,7 +41,11 @@ export function ProgrammePanel({ token, history, onStart }: Props) {
   const displayWeek = plan ? Math.max(1, Math.min(plan.duration_weeks, week)) : 1;
   const days = useMemo(() => plan ? [...plan.schedule].sort((a, b) => a.weekday - b.weekday) : [], [plan]);
   const done = plan ? days.filter(day => history.some(session => plannedWorkoutCompleted(session, plan, day, displayWeek))) : [];
-  const nextDay = days.find(day => !done.some(d => d.id === day.id));
+  const remaining = days.filter(day => !done.some(d => d.id === day.id));
+  const todayWeekday = (new Date(localISODate() + "T12:00:00Z").getUTCDay() + 6) % 7;
+  // Prefer an upcoming day instead of repeatedly pushing an already missed session.
+  // Missed sessions stay available in the list and can be logged on any day.
+  const nextDay = remaining.find(day => day.weekday >= todayWeekday) ?? remaining[0];
 
   function select(day: PlanDay) {
     if (!plan || plan.status !== "active" || week < 1 || week > plan.duration_weeks) return;
