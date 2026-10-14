@@ -196,6 +196,7 @@ export default function ExercisePage() {
 
   async function save() {
     if (!token || busy) return;
+    if (!performedAt) { setError("Choose the workout date before saving."); return; }
     if (type === "strength" && sets.some(s => s.reps <= 0)) {
       setError("Enter the repetitions you completed for every set, or remove sets you skipped.");
       return;
