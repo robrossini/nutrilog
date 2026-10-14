@@ -74,3 +74,24 @@ test("programme contains three gyms and two runs", () => {
   assert.equal(plan.schedule.filter(d => d.activity_type === "strength").length, 3);
   assert.equal(plan.schedule.filter(d => d.activity_type === "run").length, 2);
 });
+
+
+test("do not reuse a different gym day's squat weights", () => {
+  const completed = history([8, 8, 8], [45, 45, 45]);
+  completed[0].title = "Gym C";
+  completed[0].training_plan_id = "plan-1";
+  completed[0].planned_day_id = "gym-c";
+  const recommendation = suggestWeight(squat, completed, {
+    training_plan_id: "plan-1", planned_day_id: "gym-a", title: "Gym A",
+  });
+  assert.equal(recommendation.weight_kg, 55);
+  assert.equal(recommendation.next_weight_kg, null);
+});
+
+test("uses an earlier manually logged session with the matching workout title", () => {
+  const completed = history();
+  const recommendation = suggestWeight(squat, completed, {
+    training_plan_id: "plan-1", planned_day_id: "gym-a", title: "Gym A",
+  });
+  assert.equal(recommendation.next_weight_kg, 57.5);
+});
