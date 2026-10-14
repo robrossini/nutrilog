@@ -19,6 +19,9 @@ const sessionSchema = z.object({
  distance_m: z.number().min(0).max(1000000).nullable().optional(),
  effort: z.number().int().min(1).max(10).nullable().optional(),
  notes: z.string().max(2000).nullable().optional(),
+ training_plan_id: z.string().uuid().optional(),
+ planned_day_id: z.string().min(1).max(60).optional(),
+ planned_week: z.number().int().min(1).max(52).optional(),
  sets: z.array(setSchema).max(150).default([]),
 }).refine(v => v.activity_type !== "strength" || v.sets.length > 0, "Strength workouts need at least one set");
 
@@ -42,6 +45,23 @@ export async function POST(req: NextRequest) {
  const supabase=createSupabaseUserClient(token);
  const {data:userData,error:userError}=await supabase.auth.getUser();
  if(userError||!userData.user)return NextResponse.json({error:"Unauthorized"},{status:401});
+ // Planned sessions must reference a programme owned by the authenticated user.
+ if (parsed.data.training_plan_id || parsed.data.planned_day_id || parsed.data.planned_week) {
+  if (!parsed.data.training_plan_id || !parsed.data.planned_day_id || !parsed.data.planned_week) {
+   return NextResponse.json({error:"Incomplete planned workout reference"},{status:400});
+  }
+  const {data:plan,error:planError}=await supabase.from("training_plans")
+   .select("id,status,duration_weeks,schedule")
+   .eq("id",parsed.data.training_plan_id).eq("user_id",userData.user.id).maybeSingle();
+  if(planError || !plan || plan.status!=="active"){
+   return NextResponse.json({error:"Active training programme not found"},{status:400});
+  }
+  const schedule=Array.isArray(plan.schedule)?plan.schedule:[];
+  const day=schedule.find((d:any)=>d.id===parsed.data.planned_day_id);
+  if(!day || day.activity_type!==parsed.data.activity_type || parsed.data.planned_week>plan.duration_weeks){
+   return NextResponse.json({error:"Workout does not match your training plan"},{status:400});
+  }
+ }
  const {sets,...session}=parsed.data;
  const {data:created,error}=await supabase.from("exercise_sessions").insert({...session,user_id:userData.user.id}).select("id").single();
  if(error||!created) return NextResponse.json({error:"Unable to create session"},{status:500});
