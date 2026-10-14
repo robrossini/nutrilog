@@ -73,6 +73,7 @@ export default function ExercisePage() {
   const [distance, setDistance] = useState("");
   const [minutes, setMinutes] = useState("");
   const [effort, setEffort] = useState("");
+  const [runTargetMinutes, setRunTargetMinutes] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -110,6 +111,7 @@ export default function ExercisePage() {
     setSuggestions({});
     setPlanTargets({});
     setType("strength");
+    setRunTargetMinutes(null);
     setTitle(name);
     setSuccess("");
     const previous = history.find(s => s.title === name && s.activity_type === "strength");
@@ -135,12 +137,15 @@ export default function ExercisePage() {
     setPerformedAt(localISODate());
     setPlanned({ training_plan_id: plan.id, planned_day_id: day.id, planned_week: week });
     setNotes(day.notes || "");
+    setRunTargetMinutes(day.activity_type === "run" ? day.target_duration_min : null);
     setError("");
     setSuccess("");
     if (day.activity_type === "strength") {
       const nextSuggestions: Record<number, WeightSuggestion> = {};
       const rows = day.exercises.flatMap((exercise, order) => {
-        const suggestion = suggestWeight(exercise, history);
+        const suggestion = suggestWeight(exercise, history, {
+          training_plan_id: plan.id, planned_day_id: day.id, title: day.title,
+        });
         nextSuggestions[order] = suggestion;
         return Array.from({ length: exercise.target_sets }, (_, index) => ({
           exercise_name: exercise.name,
@@ -159,7 +164,7 @@ export default function ExercisePage() {
       setPlanTargets({});
       setSets([]);
       setDistance("");
-      setMinutes(day.target_duration_min ? String(day.target_duration_min) : "");
+      setMinutes(""); // Target duration is guidance, not a completed result.
       setEffort("");
     }
   }
@@ -230,6 +235,7 @@ export default function ExercisePage() {
       setDistance("");
       setMinutes("");
       setEffort("");
+      setRunTargetMinutes(null);
       setExpandedSessionId(result.id);
       await loadHistory(token);
     } catch (e) {
@@ -257,7 +263,7 @@ export default function ExercisePage() {
             <button
               key={t}
               type="button"
-              onClick={() => { setType(t); setPlanned(null); setSuggestions({}); setPlanTargets({}); setSuccess(""); }}
+              onClick={() => { setType(t); setPlanned(null); setSuggestions({}); setPlanTargets({}); setRunTargetMinutes(null); setSuccess(""); }}
               className={"rounded-lg px-4 py-2 font-medium " + (type === t
                 ? "bg-blue-700 text-white"
                 : "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50")}
@@ -366,6 +372,9 @@ export default function ExercisePage() {
             </>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {planned && <p className="sm:col-span-2 rounded-lg bg-blue-50 p-3 text-sm font-semibold text-blue-950">
+                Planned run{runTargetMinutes ? " · Suggested duration: " + runTargetMinutes + " minutes" : ""}. Log your actual distance and time below.
+              </p>}
               <label className="text-sm font-medium text-slate-700">Distance (km)
                 <input type="number" min="0" step="0.01" value={distance} onChange={e => setDistance(e.target.value)} className={"mt-1 " + inputClass} />
               </label>
