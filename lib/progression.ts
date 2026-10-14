@@ -13,12 +13,23 @@ function incrementForExercise(name: string): number {
   return 2.5;
 }
 
-export function suggestWeight(exercise: PlanExercise, history: SessionForPlan[]): WeightSuggestion {
+export function suggestWeight(
+  exercise: PlanExercise,
+  history: SessionForPlan[],
+  workout?: { training_plan_id: string; planned_day_id: string; title: string }
+): WeightSuggestion {
   const sorted = [...history].sort((a, b) => b.performed_at.localeCompare(a.performed_at));
-  const recent = sorted.find(session =>
-    session.activity_type === "strength" &&
-    (session.exercise_sets ?? []).some(s => s.exercise_name.toLowerCase() === exercise.name.toLowerCase())
-  );
+  const recent = sorted.find(session => {
+    if (session.activity_type !== "strength" ||
+        !(session.exercise_sets ?? []).some(s => s.exercise_name.toLowerCase() === exercise.name.toLowerCase())) return false;
+    if (!workout) return true;
+    // Prevent a lighter squat variation on Gym C from overwriting Gym A's working weight.
+    const plannedMatch = session.training_plan_id === workout.training_plan_id &&
+      session.planned_day_id === workout.planned_day_id;
+    const earlierManualMatch = !session.training_plan_id &&
+      session.title.toLowerCase() === workout.title.toLowerCase();
+    return plannedMatch || earlierManualMatch;
+  });
   const oldSets = (recent?.exercise_sets ?? [])
     .filter(s => s.exercise_name.toLowerCase() === exercise.name.toLowerCase())
     .sort((a, b) => a.set_number - b.set_number);
