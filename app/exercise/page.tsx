@@ -254,7 +254,10 @@ export default function ExercisePage() {
             <Link href="/" className="text-sm font-medium text-blue-700 hover:underline">← Food diary</Link>
             <h1 className="text-3xl font-bold text-slate-900">Exercise</h1>
           </div>
-          <Link href="/settings" className="text-sm font-medium text-slate-700 hover:underline">Settings</Link>
+          <nav className="flex flex-wrap gap-4">
+            <Link href="/progress" className="text-sm font-semibold text-blue-700 hover:underline">Progress</Link>
+            <Link href="/settings" className="text-sm font-medium text-slate-700 hover:underline">Settings</Link>
+          </nav>
         </header>
 
         <ProgrammePanel token={token} history={history} onStart={startPlannedWorkout} />
