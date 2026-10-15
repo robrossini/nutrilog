@@ -42,7 +42,7 @@ export function dailyNutrition(meals: ProgressMeal[]) {
     day.fat += Number(meal.fat_g) || 0;
     byDay.set(date, day);
   }
-  return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function exerciseNames(sessions: ProgressSession[]): string[] {
@@ -54,7 +54,7 @@ export function exerciseNames(sessions: ProgressSession[]): string[] {
       if (name && !found.has(name.toLowerCase())) found.set(name.toLowerCase(), name);
     }
   }
-  return [...found.values()].sort((a, b) => a.localeCompare(b));
+  return Array.from(found.values()).sort((a, b) => a.localeCompare(b));
 }
 
 export function strengthSeries(sessions: ProgressSession[], exercise: string) {
@@ -74,7 +74,7 @@ export function strengthSeries(sessions: ProgressSession[], exercise: string) {
       }
     }
   }
-  return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function runSeries(sessions: ProgressSession[]) {
