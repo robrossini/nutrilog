@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseUserClient, getBearerToken } from "../../../lib/supabase";
+import { isValidWeighIn } from "../../../lib/progress";
 
 export const runtime = "nodejs";
 
@@ -66,10 +67,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const date = body?.recorded_on;
     const weight = body?.weight_kg;
-    if (typeof date !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date) ||
-        !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date ||
-        typeof weight !== "number" || !Number.isFinite(weight) ||
-        weight < 30 || weight > 300) {
+    if (!isValidWeighIn(date, weight)) {
       return NextResponse.json({ error: "Enter a valid date and weight between 30 and 300 kg." }, { status: 400 });
     }
     // A check-in is only for today or earlier, with a small allowance for local/UTC offset.
