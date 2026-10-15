@@ -10,7 +10,7 @@ const compiled = ts.transpileModule(source, {
 }).outputText;
 const context = { exports: {}, Date, Map, Number, String };
 vm.runInNewContext(compiled, context, { filename: "lib/progress.ts" });
-const { dailyNutrition, exerciseNames, strengthSeries, runSeries } = context.exports;
+const { dailyNutrition, exerciseNames, strengthSeries, runSeries, isValidWeighIn } = context.exports;
 
 test("sums food by day without fabricating days with zero intake", () => {
   const result = dailyNutrition([
@@ -49,4 +49,23 @@ test("only runs with actual distance and duration yield pace", () => {
   assert.equal(result.length, 1);
   assert.equal(result[0].distance, 4);
   assert.equal(result[0].pace, 7.5);
+});
+
+test("valid dates and weights save without a false format error", () => {
+  assert.equal(isValidWeighIn("2026-10-15", 78), true);
+  assert.equal(isValidWeighIn("2026-10-14", 78.2), true);
+  assert.equal(isValidWeighIn("2024-02-29", 80), true);
+  assert.equal(isValidWeighIn("2026-10-15", 30), true);
+  assert.equal(isValidWeighIn("2026-10-15", 300), true);
+});
+
+test("reject malformed dates and out-of-range or missing weights", () => {
+  assert.equal(isValidWeighIn("2026-02-30", 78), false);
+  assert.equal(isValidWeighIn("2026-13-01", 78), false);
+  assert.equal(isValidWeighIn("15/10/2026", 78), false);
+  assert.equal(isValidWeighIn("", 78), false);
+  assert.equal(isValidWeighIn("2026-10-15", 29.9), false);
+  assert.equal(isValidWeighIn("2026-10-15", 300.1), false);
+  assert.equal(isValidWeighIn("2026-10-15", null), false);
+  assert.equal(isValidWeighIn("2026-10-15", "78"), false);
 });
