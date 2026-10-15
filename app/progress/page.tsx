@@ -3,7 +3,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabase-client";
-import { dailyNutrition, dateDaysAgo, exerciseNames, runSeries, strengthSeries } from "../../lib/progress";
+import { dailyNutrition, dateDaysAgo, exerciseNames, isValidWeighIn, runSeries, strengthSeries } from "../../lib/progress";
 import type { ProgressMeal, ProgressSession, ProgressWeight } from "../../lib/progress";
 import { LiftChart, NutritionChart, RunChart, WeightChart } from "../../components/progress/charts";
 
@@ -79,7 +79,7 @@ export default function ProgressPage() {
     e.preventDefault();
     setError(""); setMessage("");
     const n = Number(weight);
-    if (!weight.trim() || !Number.isFinite(n) || n < 30 || n > 300 || weightDate > dateDaysAgo(0)) {
+    if (!weight.trim() || !isValidWeighIn(weightDate, n) || weightDate > dateDaysAgo(0)) {
       setError("Enter a valid past or present date and a weight between 30 and 300 kg.");
       return;
     }
