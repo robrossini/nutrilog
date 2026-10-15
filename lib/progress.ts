@@ -18,6 +18,18 @@ export type ProgressSession = {
 };
 export type ProgressWeight = { recorded_on: string; weight_kg: number };
 
+// Used by both the weigh-in form and the API so valid entries are handled consistently.
+export function isValidWeighIn(recordedOn: unknown, weightKg: unknown): boolean {
+  if (typeof recordedOn !== "string" ||
+      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(recordedOn) ||
+      typeof weightKg !== "number" || !Number.isFinite(weightKg) ||
+      weightKg < 30 || weightKg > 300) return false;
+
+  const parsed = new Date(recordedOn + "T12:00:00Z");
+  return Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === recordedOn;
+}
+
 export function localDay(value: string): string {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "";
