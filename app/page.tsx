@@ -303,6 +303,9 @@ export default function HomePage() {
               totalCarbs={todaysTotals.carbs}
               totalFat={todaysTotals.fat}
               calorieGoal={profile?.daily_calorie_target ?? 2000}
+              proteinGoal={profile?.protein_target_g ?? 150}
+              carbsGoal={profile?.carbs_target_g ?? 180}
+              fatGoal={profile?.fat_target_g ?? 70}
             />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
