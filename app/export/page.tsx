@@ -12,7 +12,7 @@ async function allRows(table: string, columns: string, userId: string, orderColu
       .order(orderColumn, { ascending: true })
       .range(offset, offset + 499);
     if (error) throw new Error(table + ": " + error.message);
-    rows.push(...(data ?? []));
+    rows.push(...((data ?? []) as unknown as Record<string, unknown>[]));
     if (!data || data.length < 500) break;
   }
   return rows;
