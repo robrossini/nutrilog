@@ -253,7 +253,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-8 flex items-start justify-between gap-4">
+        <header className="mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">NutriLog</h1>
             <p className="text-gray-600">
@@ -262,7 +262,7 @@ export default function HomePage() {
                 : "Log meals naturally with AI-powered nutrition estimation"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <nav aria-label="Main navigation" className="mt-5 flex flex-wrap items-center gap-2">
             <Link href="/exercise" className="rounded-lg border border-blue-300 bg-blue-50 text-blue-700 px-3 py-2 text-sm hover:bg-blue-100">Exercise</Link>
             <Link href="/progress" className="rounded-lg border border-blue-300 bg-white text-blue-700 px-3 py-2 text-sm hover:bg-blue-50">Progress</Link>
             <Link href="/mind" className="rounded-lg border border-indigo-300 bg-white text-indigo-700 px-3 py-2 text-sm hover:bg-indigo-50">Mind</Link>
@@ -278,8 +278,8 @@ export default function HomePage() {
             >
               Log out
             </button>
-          </div>
-        </div>
+          </nav>
+        </header>
 
         <TopTabs activeTab={activeTab} onChange={setActiveTab} />
 
