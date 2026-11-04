@@ -265,6 +265,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <Link href="/exercise" className="rounded-lg border border-blue-300 bg-blue-50 text-blue-700 px-3 py-2 text-sm hover:bg-blue-100">Exercise</Link>
             <Link href="/progress" className="rounded-lg border border-blue-300 bg-white text-blue-700 px-3 py-2 text-sm hover:bg-blue-50">Progress</Link>
+            <Link href="/mind" className="rounded-lg border border-indigo-300 bg-white text-indigo-700 px-3 py-2 text-sm hover:bg-indigo-50">Mind</Link>
             <Link
               href="/settings"
               className="rounded-lg border border-gray-300 bg-blue-600 text-white px-3 py-2 text-sm hover:bg-gray-50"
