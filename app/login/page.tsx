@@ -33,7 +33,11 @@ async function routeAfterAuth(accessToken: string, router: ReturnType<typeof use
   const res = await fetch('/api/profile', { headers: { Authorization: `Bearer ${accessToken}` } });
   const json = await res.json().catch(() => ({}));
   const needs = !res.ok || profileNeedsOnboarding(json.profile);
-  router.replace(needs ? '/settings?onboarding=1' : '/');
+  // Preserve links from reminder emails. Only allow same-origin relative paths.
+  const requested = new URLSearchParams(window.location.search).get("next");
+  const safeNext = requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.includes("\\")
+    ? requested : "/";
+  router.replace(needs ? '/settings?onboarding=1' : safeNext);
   router.refresh();
 }
 
