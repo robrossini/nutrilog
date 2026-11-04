@@ -12,7 +12,9 @@ categories are recorded.
    This creates the check-ins, reminder preferences and internal send ledger with RLS.
    Do not rerun previous migrations.
 2. In Vercel project settings, configure these **server-only** environment variables:
-   - SUPABASE_SERVICE_ROLE_KEY — Supabase service role key. Never prefix with NEXT_PUBLIC_.
+   - SUPABASE_SECRET_KEY — Supabase secret API key (sb_secret_...) from Settings > API Keys.
+     The older SUPABASE_SERVICE_ROLE_KEY also works as a fallback during migration.
+     Never prefix either name with NEXT_PUBLIC_.
    - CRON_SECRET — generate a strong random token. Vercel Cron uses it in Authorization.
    - RESEND_API_KEY — email sending API key from Resend.
    - MIND_REMINDER_FROM — verified sender, e.g. Nutrilog <reminders@your-verified-domain.com>.
