@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const response = await fetch(url.toString(), { headers: { "User-Agent": "NutriLogRecipeImporter/1.0" }, signal: AbortSignal.timeout(8000), redirect: "error" });
     if (!response.ok) return NextResponse.json({ error: "Could not retrieve recipe" }, { status: 422 });
     const html = (await response.text()).slice(0, 2_000_000);
-    const scripts = [...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+    const scripts = Array.from(html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi));
     const recipes = scripts.flatMap(m => { try { return recipeObjects(JSON.parse(m[1])); } catch { return []; } });
     const recipe = recipes[0];
     if (!recipe) return NextResponse.json({ error: "No structured recipe data found" }, { status: 422 });
