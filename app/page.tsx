@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { format, isToday, startOfDay } from "date-fns";
 import { Calendar, History, Plus } from "lucide-react";
 import { MealLogInput } from "../components/meal-logger/meal-log-input";
+import { QuickLog } from "../components/meal-logger/quick-log";
 import { MealCard } from "../components/meal-logger/meal-card";
 import { MacrosSummary } from "../components/meal-logger/macros-summary";
 import { TopTabs } from "../components/meal-logger/top-tabs";
@@ -297,6 +298,7 @@ export default function HomePage() {
                 <h2 className="text-xl font-semibold text-gray-900">Log a Meal</h2>
               </div>
               <MealLogInput onSubmitMeal={handleLogMeal} isProcessing={loading} />
+              <QuickLog token={token} onLogged={() => loadMeals(activeTab === "today" ? "today" : "month")} />
             </div>
 
             <MacrosSummary
