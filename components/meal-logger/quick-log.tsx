@@ -31,7 +31,7 @@ export function QuickLog({ token, onLogged }: { token: string | null; onLogged: 
   }
   return <div className="mt-5 border-t pt-4 space-y-3">
     <h3 className="font-semibold text-gray-900">Repeat a previous meal</h3>
-    <input aria-label="Search previous meals" className="w-full rounded-lg border border-gray-300 p-3 text-gray-900" placeholder="Search previous meals…" value={query} onChange={e => { setQuery(e.target.value); setSelected(null); }} />
+    <input aria-label="Search previous meals" className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 placeholder:text-gray-400" placeholder="Search previous meals…" value={query} onChange={e => { setQuery(e.target.value); setSelected(null); }} />
     <div className="max-h-52 overflow-y-auto space-y-1">
       {matches.map(m => <button type="button" key={m.id} onClick={() => setSelected(m)} className={`block w-full rounded-lg p-2 text-left text-sm ${selected?.id === m.id ? "bg-blue-100" : "bg-gray-50 hover:bg-blue-50"}`}>
         <span className="font-medium text-gray-900">{m.meal_name || m.raw_input}</span>
@@ -41,7 +41,7 @@ export function QuickLog({ token, onLogged }: { token: string | null; onLogged: 
     </div>
     {selected && <div className="flex flex-wrap items-end gap-3 rounded-lg border p-3">
       <label className="text-sm text-gray-800">Quantity multiplier
-        <input type="number" min="0.1" max="20" step="0.1" value={multiplier} onChange={e => setMultiplier(e.target.value)} className="block w-24 rounded border p-2 text-gray-900" />
+        <input type="number" min="0.1" max="20" step="0.1" value={multiplier} onChange={e => setMultiplier(e.target.value)} className="block w-24 rounded border border-gray-300 bg-white p-2 text-gray-900" />
       </label>
       <button type="button" onClick={repeat} disabled={busy} className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{busy ? "Logging…" : "Log this meal"}</button>
     </div>}
